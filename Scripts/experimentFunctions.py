@@ -60,7 +60,7 @@ outlet = StreamOutlet(info)
 ###### Experiment initialization ######
 
 # Initializing window
-win = visual.Window(size=settings.monitor_size, fullscr=True, winType='pyglet', allowGUI=True, screen=1, units='pix') 
+win = visual.Window(size=settings.monitor_size, fullscr=True, winType='pyglet', allowGUI=True, screen=0, units='pix') 
 
 # Initializing fixation text and probe word text 
 textFix = visual.TextStim(win=win, name='textFix', text='+', font='Arial',units='pix',height=42,
@@ -74,9 +74,9 @@ keys = event.getKeys(keyList=None, timeStamped=globalClock)
 
 # Prepare PsychoPy log
 log_base = time.strftime('%m-%d-%y_%H-%M')
-logWritePath = subject_path + '\\' + settings.subjID + '\\PsychoPyLog_subjID_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '_' + str(log_base) + '.csv'
+logWritePath = subject_path + '/' + settings.subjID + '/PsychoPyLog_subjID_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '_' + str(log_base) + '.csv'
 
-logWritePathKey = subject_path + '\\' + settings.subjID + '\\keypress_subjID_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '_' + str(log_base) + '.csv'
+logWritePathKey = subject_path + '/' + settings.subjID + '/keypress_subjID_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '_' + str(log_base) + '.csv'
 
 logging.LogFile(logWritePath, level=logging.EXP, filemode='w')
 logging.console = True
@@ -163,7 +163,7 @@ def findImages(directory):
                         break
                 if is_valid:
                     noImages += 1
-                imagesInEachCategory[subdir] = [subpath + '\\' + ii for ii in files]
+                imagesInEachCategory[subdir] = [subpath + '/' + ii for ii in files]
     # print('Found %d images belonging to %d categories.\n' % (noImages, noCategories-1))
     return noImages, imagesInEachCategory
 
@@ -200,7 +200,7 @@ def createRandomImages(dom='female', lure='male'):
     fusedCats = []
     for item in fusedList:
         str_item = str(item)
-        str_item = str_item.split('\\')
+        str_item = str_item.split('/')
         fusedCats.append(str_item[-2])
     
     return fusedList, fusedCats
@@ -254,7 +254,7 @@ def createIndices(aDom, aLure, nDom, nLure, subjID_forfile=settings.subjID, exp_
         
         # FOR SAVING
         # fusedImage = Image.blend(background, foreground, .5)
-        # fusedImage.save(stable_path + '\\' + aFolder + str(blockIdx) + '\\' 'no_' + str(imageCount) + '.jpg')
+        # fusedImage.save(stable_path + '/' + aFolder + str(blockIdx) + '/' 'no_' + str(imageCount) + '.jpg')
     
         background.close()
         foreground.close()
@@ -267,7 +267,7 @@ def createIndices(aDom, aLure, nDom, nLure, subjID_forfile=settings.subjID, exp_
         
     print('Created {0} fused image indices, with a total no. of blocks currently created: {1}.\n'.format(len(aCatImages), str(blockIdx)))
 
-    df_imgIdxSave.to_csv(subject_path + '\\createIndices_' + str(subjID_forfile) + '_day_' + str(exp_day) + '.csv') 
+    df_imgIdxSave.to_csv(subject_path + '/createIndices_' + str(subjID_forfile) + '_day_' + str(exp_day) + '.csv') 
 
     blockIdx += 1
     
@@ -292,17 +292,17 @@ def createNonFusedIndices(mixture=[12,13,12,13], no_blocks=8, no_runs=3):
 
     allImages = [[],[],[],[]]
         
-    dir_male = data_path + '\\male'
-    dir_female = data_path + '\\female'
-    dir_indoor = data_path + '\\indoor'
-    dir_outdoor = data_path + '\\outdoor'
+    dir_male = data_path + '/male'
+    dir_female = data_path + '/female'
+    dir_indoor = data_path + '/indoor'
+    dir_outdoor = data_path + '/outdoor'
     
     all_dirs = [dir_male,dir_female,dir_indoor,dir_outdoor]
     
     for count, directory in enumerate(all_dirs):
         for file in os.listdir(directory):
             if file.lower().endswith(".jpg"):
-                allImages[count].append(directory + '\\' + file)
+                allImages[count].append(directory + '/' + file)
     
     randomImages = []
 
@@ -327,7 +327,7 @@ def createNonFusedIndices(mixture=[12,13,12,13], no_blocks=8, no_runs=3):
         imgName = np.char.split(entry,sep='.')
         imgName = imgName.tolist()
         imgName = imgName[0]
-        imgName = imgName.split('\\')
+        imgName = imgName.split('/')
         catName = imgName[-1]
         print(catName)
         
@@ -343,7 +343,7 @@ def createNonFusedIndices(mixture=[12,13,12,13], no_blocks=8, no_runs=3):
         catLst2.append(new)
 
     df_nonFused = pd.DataFrame(np.array(randomImages),catLst2)
-    df_nonFused.to_csv(subject_path + '\\createIndicesNonFused_' + str(settings.subjID) + '.csv') 
+    df_nonFused.to_csv(subject_path + '/createIndicesNonFused_' + str(settings.subjID) + '.csv') 
     
 
 def fuseImage(csvfile, alpha=0.5):
@@ -547,7 +547,7 @@ def saveDataFrame(subjID):
     Saves the data frame to the subject_path.
     '''
     df_timeLst = pd.DataFrame(timeLst,imgIdxLst)
-    df_timeLst.to_csv(subject_path + '\\' + subjID + '\\imageTime_subjID_' + str(subjID) + '_day_' + str(settings.expDay) + '_' + str(log_base) + '.csv') 
+    df_timeLst.to_csv(subject_path + '/' + subjID + '/imageTime_subjID_' + str(subjID) + '_day_' + str(settings.expDay) + '_' + str(log_base) + '.csv') 
     
     
 def saveAlphaDataFrame(subjID):
@@ -555,7 +555,7 @@ def saveAlphaDataFrame(subjID):
     Saves the data frame to the subject_path.
     '''
     df_alphaLst = pd.DataFrame(alphaLst)
-    df_alphaLst.to_csv(subject_path + '\\' + subjID + '\\alpha_subjID_' + str(subjID) + '.csv') 
+    df_alphaLst.to_csv(subject_path + '/' + subjID + '/alpha_subjID_' + str(subjID) + '.csv') 
     
     
 def saveMeanAlphaDataFrame(subjID):
@@ -563,7 +563,7 @@ def saveMeanAlphaDataFrame(subjID):
     Saves the data frame to the subject_path.
     '''
     df_meanAlphaLst = pd.DataFrame(meanAlphaLst)
-    df_meanAlphaLst.to_csv(subject_path + '\\' + subjID + '\\MEAN_alpha_subjID_' + str(subjID) + '_'  + 'day_' + str(settings.expDay) + str(log_base) + '.csv') 
+    df_meanAlphaLst.to_csv(subject_path + '/' + subjID + '/MEAN_alpha_subjID_' + str(subjID) + '_'  + 'day_' + str(settings.expDay) + str(log_base) + '.csv') 
     
 def readMarkerStream(stream_name ='alphaStream'):
     '''
@@ -622,9 +622,9 @@ def runTest(day='1'):
         for run in list(range(1)):
             for ii in list(range(0,runLen)):
                 if ii % blockLen == 0: 
-                    runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
+                    runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
                     
-                fuseImageSlow(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
+                fuseImageSlow(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
                 
                 if ii == runLen-1:
                     runBreak(600,'10 second break')
@@ -633,7 +633,7 @@ def runTest(day='1'):
                 
     if expDay == '2':
         
-        alphafile = subject_path + '\\' + subjID + '\\alphamock.csv'
+        alphafile = subject_path + '/' + subjID + '/alphamock.csv'
         with open(alphafile) as csv_file:
             alphaLst = list(csv.reader(csv_file, delimiter=','))
             del alphaLst[0]
@@ -647,9 +647,9 @@ def runTest(day='1'):
                runBreak(180,'Recording stable blocks')
             
             if ii % blockLen == 0: # Shows the category text probe
-                runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
+                runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
                 
-            fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv',alpha=0.5)
+            fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv',alpha=0.5)
             
             if ii == runLenHalf-1: # Break between the stable blocks of NF runs
                 runBreak(600,'10 second break')
@@ -660,10 +660,10 @@ def runTest(day='1'):
                runBreak(180,'Neurofeedback is starting')
            
             if jj % blockLen == 0: # Shows the category text probe
-                runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
+                runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv')
        
             if jj in [0,1,10]: # First 3 trials are stable, alpha = 0.5
-                fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv',alpha=0.5)
+                fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv',alpha=0.5)
                 alphaIdx += 1
                 
             else:
@@ -671,7 +671,7 @@ def runTest(day='1'):
                 alphaVal = alphaLst[alphaIdx][0]
                 alphaVal = float(alphaVal)
         
-                fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv',alpha=alphaVal)
+                fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(expDay) + '.csv',alpha=alphaVal)
                 
                 alphaIdx += 1
             
@@ -715,10 +715,10 @@ def runBehDay(numRuns=2, numBlocks=8, blockLen=50):
                 runBreak(1800,'30 second break')
                 
             if ii % blockLen == 0: 
-                runFixProbe(subject_path + '\\' + settings.subjID + '\\createIndices_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '.csv')
+                runFixProbe(subject_path + '/' + settings.subjID + '/createIndices_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '.csv')
             
                 
-            fuseImage(subject_path + '\\' + settings.subjID + '\\createIndices_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '.csv')
+            fuseImage(subject_path + '/' + settings.subjID + '/createIndices_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '.csv')
             
             if ii == runLen-1 and run == 0:
                 runBreak(1800,'30 second break')
@@ -764,7 +764,7 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
     runLenHalf = int(runLen/2)
     
     # Read whether participant is control or feedback subject from file generated on day 1. 
-    control_file = open(subject_path + '\\' + settings.subjID + '\\feedback_subjID_' + str(settings.subjID) + '.txt','r')
+    control_file = open(subject_path + '/' + settings.subjID + '/feedback_subjID_' + str(settings.subjID) + '.txt','r')
     control = [x.rstrip("\n") for x in control_file.readlines()]
 
      ### CONTROL SUBJECTS ###
@@ -772,7 +772,7 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
         subj_orig = copy.copy(settings.subjID) # Copy the original subjID
         
         subjID = control[1] # Use alpha file and createIndices file from matched feedback subject
-        alphafile = subject_path + '\\' + subjID + '\\alpha_subjID_' + str(subjID) + '.csv'
+        alphafile = subject_path + '/' + subjID + '/alpha_subjID_' + str(subjID) + '.csv'
 
         with open(alphafile) as csv_file:
             alphaLst2 = list(csv.reader(csv_file, delimiter=','))
@@ -793,9 +793,9 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                     runBreak(1800,'30 second break')
                 
                 if ii % blockLen == 0: # Correct: ii % 50?
-                    runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                    runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
 
-                fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')    
+                fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')    
                 
                 if ii == runLen-1:
                     runBreak(1800,'30 second break')
@@ -808,9 +808,9 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                    runBreak(180,'Recording stable blocks')
                 
                 if ii % blockLen == 0: # Shows the category text probe
-                    runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                    runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
 
-                fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
                 
                 if ii == runLenHalf-1: # Break between the stable blocks of NF runs
                     runBreak(1800,'30 second break') # This is when the clf is trained
@@ -823,10 +823,10 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                     runBreak(180,'Neurofeedback is starting')
                     
                 if jj % blockLen == 0:
-                    runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                    runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
                     
                 if jj in [0,1,2,50,51,52,100,101,102,150,151,152]: # First 3 trials are stable, alpha = 0.5
-                    fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=0.5)
+                    fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=0.5)
                     alphaVal = alphaLstMock[alphaIdx]
                     alphaVal = float(alphaVal) 
                     alphaLst.append(alphaVal)
@@ -847,7 +847,7 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                     mean_alpha = np.mean(alphaLst[-3:])
                     meanAlphaLst.append(mean_alpha)
                     
-                    fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=mean_alpha)
+                    fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=mean_alpha)
                     
                 if jj == runLenHalf-1:
                     
@@ -882,9 +882,9 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                     runBreak(1800,'30 second break')
                 
                 if ii % blockLen == 0: # Correct: ii % 50?
-                    runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                    runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
 
-                fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')    
+                fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')    
                 if ii == runLen-1:
                     runBreak(1800,'30 second break')
                                     
@@ -896,9 +896,9 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                    runBreak(180,'Recording stable blocks')
                 
                 if ii % blockLen == 0: # Shows the category text probe
-                    runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                    runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
                     
-                fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
                 
                 if ii == runLenHalf-1: # Break between the stable blocks of NF runs
                     runBreak(1800,'30 second break') # This is when the clf is trained
@@ -913,7 +913,7 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                     runBreak(180,'Neurofeedback is starting')
                
                 if jj % blockLen == 0: # Shows the category text probe
-                    runFixProbe(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
+                    runFixProbe(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv')
            
                 if jj in [0,1,2,50,51,52,100,101,102,150,151,152]: # First 3 trials are stable
                     alphamarker,timestamp = inlet_alpha.pull_chunk(timeout=0.005)
@@ -924,7 +924,7 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                        alphaVal = 0.5
                        
                     alphaLst.append(alphaVal)
-                    fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=0.5)
+                    fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=0.5)
                     
                 else:
                     alphamarker,timestamp  = inlet_alpha.pull_chunk(timeout=0.005)
@@ -942,7 +942,7 @@ def runNFday(subjID, numRuns, numBlocks, blockLen):
                     mean_alpha = np.mean(alphaLst[-3:])
                     meanAlphaLst.append(mean_alpha)
                     
-                    fuseImage(subject_path + '\\' + subjID + '\\createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=mean_alpha) 
+                    fuseImage(subject_path + '/' + subjID + '/createIndices_' + str(subjID) + '_day_' + str(settings.expDay) + '.csv', alpha=mean_alpha) 
                 
                 if jj == runLenHalf-1: # Break after a finished run
                     if run != numRuns-1: # Avoid a break after the very last run 
