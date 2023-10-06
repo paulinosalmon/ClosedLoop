@@ -95,6 +95,19 @@ def closeWin():
     
 ###### Experiment functions ######
 
+def filter_out_non_images(directory):
+    """
+    Filters out non-image files from a directory.
+
+    Args:
+    - directory (str): Path to the directory containing files.
+
+    Returns:
+    - List[str]: List of image file paths.
+    """
+    image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif']
+    return [os.path.join(directory, f) for f in os.listdir(directory) if os.path.splitext(f)[1].lower() in image_extensions]
+
 def findCategories(directory):
     '''
     Returns the category folders in the given input directory.
@@ -248,9 +261,11 @@ def createIndices(aDom, aLure, nDom, nLure, subjID_forfile=settings.subjID, exp_
     global blockIdx
     
     for i in range(len(aCatImages)):
-        
-        background = Image.open(os.path.join(aCatImages[i]), mode='r')
-        foreground = Image.open(os.path.join(nCatImages[i]))
+        valid_image_extensions = ['.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.gif']
+
+        if os.path.splitext(nCatImages[i])[1].lower() in valid_image_extensions:
+            background = Image.open(os.path.join(aCatImages[i]), mode='r')
+            foreground = Image.open(os.path.join(nCatImages[i]))
         
         # FOR SAVING
         # fusedImage = Image.blend(background, foreground, .5)
