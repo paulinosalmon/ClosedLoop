@@ -261,11 +261,9 @@ def createIndices(aDom, aLure, nDom, nLure, subjID_forfile=settings.subjID, exp_
     global blockIdx
     
     for i in range(len(aCatImages)):
-        valid_image_extensions = ['.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.gif']
-
-        if os.path.splitext(nCatImages[i])[1].lower() in valid_image_extensions:
-            background = Image.open(os.path.join(aCatImages[i]), mode='r')
-            foreground = Image.open(os.path.join(nCatImages[i]))
+        
+        background = Image.open(os.path.join(aCatImages[i]), mode='r')
+        foreground = Image.open(os.path.join(nCatImages[i]))
         
         # FOR SAVING
         # fusedImage = Image.blend(background, foreground, .5)
