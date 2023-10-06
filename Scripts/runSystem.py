@@ -21,11 +21,11 @@ import realtimeFunctions
 import streamFunctions
 
 # Extract experimental categories 
-y = realtimeFunctions.extractCat(subject_path + '\\' + settings.subjID + '\\createIndices_' + settings.subjID + '_day_2.csv')
+y = realtimeFunctions.extractCat(subject_path + '/' + settings.subjID + '/createIndices_' + settings.subjID + '_day_2.csv')
 y = np.array([int(x) for x in y])
 
 #%% Tracking of print outputs. Saved as a log file to the subject ID folder.
-sys.stdout = open(subject_path + '\\' + settings.subjID + '\\stream_logfile_subject_' + settings.subjID + '_' + time.strftime('%m-%d-%y_%H-%M') + '.log')
+sys.stdout = open(subject_path + '/' + settings.subjID + '/stream_logfile_subject_' + settings.subjID + '_' + time.strftime('%m-%d-%y_%H-%M') + '.log')
 
 #%% Look for a recent stream from the Psychopy experimental script (will localize the experimental stream after runSystem is started).
 

@@ -68,15 +68,15 @@ def base_dir_init(): # Base directory for ClosedLoop GitHub
     return base_dir
 
 def script_path_init():
-    script_path = base_dir_init() + '\Scripts'
+    script_path = base_dir_init() + '/Scripts'
     return script_path
 
 def data_path_init(): # Data (images) storage directory
-    data_path = base_dir_init() + '\imageStimuli'
+    data_path = base_dir_init() + '/imageStimuli'
     return data_path
 
 def subject_path_init(): # Subjects directory, for storing EEG data 
-    subject_path = base_dir_init() + '\subjectsData'
+    subject_path = base_dir_init() + '/subjectsData'
     return subject_path
 
 if __name__ == '__main__':
