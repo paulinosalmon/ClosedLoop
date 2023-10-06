@@ -6,3 +6,4 @@ Documents/*
 venv/
 imageStimuli/
 Scripts/__pycache__/
+subjectsData/
