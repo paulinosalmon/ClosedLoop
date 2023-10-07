@@ -54,7 +54,7 @@ alphaLstSave = []
 meanAlphaLst = []
 
 ###### Outlet ######
-info = StreamInfo('PsychopyExperiment', 'Markers', 1, 0, 'int32', 'myuidw43536') # Has to match the experiment name in runClosedLoop.py script
+info = StreamInfo('PsychopyExperiment', 'Markers', 1, 0, 'int32', 'myuidw43536') # Has to match the experiment name in runSystem.py script
 outlet = StreamOutlet(info)
 
 ###### Experiment initialization ######
@@ -580,16 +580,16 @@ def saveMeanAlphaDataFrame(subjID):
     
 def readMarkerStream(stream_name ='alphaStream'):
     '''
-    Reads stream from an outlet (alphaStream from runClosedLoop.py script).
+    Reads stream from an outlet (alphaStream from runSystem.py script).
     The outlet contains alpha values for updating the image stimuli based on recorded and decoded EEG.
     
     # Arguments
     stream_name: string
-        Name of stream from runClosedLoop.py script.
+        Name of stream from runSystem.py script.
     
     # Returns
         inlet: Pylsl object
-            Inlet for connecting with the EEG runClosedLoop.py script.
+            Inlet for connecting with the EEG runSystem.py script.
             The inlet contains the alpha values (decoded EEG responses) for updating stimuli.
     
     '''
