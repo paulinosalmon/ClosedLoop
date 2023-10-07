@@ -60,7 +60,7 @@ The data will be stored and saved in the subject's folder \ClosedLoop\subjectsDa
 *runExperiment.py* will save the following files after a completed neurofeedback session:
 -	subject_01_EEG_TIMESTAMP.csv: All of the recorded, raw EEG data. 
 -	subject_01_marker_TIMESTAMP.csv: All the markers (time points of stimuli/EEG epoch onset) for experimental trials. 
--	stream_logfile_subject_01_TIMETAMP.log: A log of the EEG streaming (created by runClosedLoop.py and streamFunctions.py).
+-	stream_logfile_subject_01_TIMETAMP.log: A log of the EEG streaming (created by runSystem.py and streamFunctions.py).
 -	imageTime_subjID_01_day_2_TIMESTAMP.csv: All time points of stimuli onsets. Same clock as in the two files below.
 -	PsychoPyLog_subjID_01_day_2_TIMESTAMP.csv: Log of all changes in the experimental window (using [PsychoPy logging](http://www.psychopy.org/coder/codeLogging.html)).
 -	Keypress_subjID_01_day_2_TIMESTAMP.csv: Time points for all recorded keypresses during the experiment.
@@ -84,11 +84,11 @@ Set up experimental, recording, preprocessing and classification parameters.
 ### realtimeFunctions.py
 Functions for working with real-time EEG data in Python:
 Standardizing, scaling, artifact correction (SSP projection), preprocessing, classification.
-The functions are called in *runClosedLoop.py*.
+The functions are called in *runSystem.py*.
 
 ### streamFunctions.py
 Functions for finding the EEG stream and the experimental stream containing markers (trigger points for stimuli onset, from experimental script: *experimentFunctions.py*), saving data, writing log files and changing system states for the neurofeedback system.
-The functions are called in *runClosedLoop.py*.
+The functions are called in *runSystem.py*.
 
 ### runExperiment.py
 *runExperiment.py* starts the experimental script. As explained in **Experimental paradigm**, the paradigm consists of behavioral days (day 1 and 3), and a neurofeedback day (day 2). 
