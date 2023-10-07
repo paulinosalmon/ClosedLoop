@@ -25,6 +25,22 @@ y = realtimeFunctions.extractCat(subject_path + '/' + settings.subjID + '/create
 y = np.array([int(x) for x in y])
 
 #%% Tracking of print outputs. Saved as a log file to the subject ID folder.
+
+# Check if directory exists
+dir_path = os.path.join(subject_path, settings.subjID)
+print(f"Attempting to create directory: {dir_path}")
+
+if not os.path.exists(dir_path):
+    print(f"Directory {dir_path} does not exist. Creating...")
+    os.makedirs(dir_path)
+else:
+    print(f"Directory {dir_path} already exists.")
+
+log_file_path = os.path.join(dir_path, 'stream_logfile_subject_' + settings.subjID + '_' + time.strftime('%m-%d-%y_%H-%M') + '.log')
+print(f"Attempting to create log file: {log_file_path}\n")
+
+sys.stdout = open(log_file_path, 'w')
+
 sys.stdout = open(subject_path + '/' + settings.subjID + '/stream_logfile_subject_' + settings.subjID + '_' + time.strftime('%m-%d-%y_%H-%M') + '.log')
 
 #%% Look for a recent stream from the Psychopy experimental script (will localize the experimental stream after runSystem is started).
