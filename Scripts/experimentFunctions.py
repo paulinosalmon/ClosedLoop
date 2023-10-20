@@ -388,8 +388,20 @@ def fuseImage(csvfile, alpha=0.5):
             
     foreground = Image.open(foregroundID, mode='r')
     background = Image.open(backgroundID, mode='r')
-    
-    fusedImg = Image.blend(background, foreground, alpha)
+
+    # Resize for consistency
+    new_dimensions = (540, 405) 
+    background_resized = background.resize(new_dimensions)
+    foreground_resized = foreground.resize(new_dimensions)
+
+    if foreground_resized.mode != background_resized.mode:
+        foreground_resized = foreground_resized.convert("RGB")
+        background_resized = background_resized.convert("RGB")
+
+    print("Background dimensions:", background_resized.size)
+    print("Foreground dimensions:", foreground_resized.size)
+
+    fusedImg = Image.blend(background_resized, foreground_resized, alpha)
     
     # fusedImg.show() # Show composite image
     runImage(fusedImg)
@@ -420,6 +432,17 @@ def fuseImageSlow(csvfile,alpha=0.5):
             
     foreground = Image.open(foregroundID, mode='r')
     background = Image.open(backgroundID, mode='r')
+
+    new_dimensions = (540, 405) 
+    background_resized = background.resize(new_dimensions)
+    foreground_resized = foreground.resize(new_dimensions)
+
+    if foreground_resized.mode != background_resized.mode:
+        foreground_resized = foreground_resized.convert("RGB")
+        background_resized = background_resized.convert("RGB")
+
+    print("Background dimensions:", background_resized.size)
+    print("Foreground dimensions:", foreground_resized.size)
     
     fusedImg = Image.blend(background, foreground, alpha)
     
