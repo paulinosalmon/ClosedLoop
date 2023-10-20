@@ -194,6 +194,8 @@ def get_epoch(inlet_EEG, inlet_marker, store_EEG, store_marker, user_id, excess_
             
         and as arguments..
     '''
+    default_values = (None, state, None, excess_EEG, excess_EEG_time, excess_marker, excess_marker_time, look_for_trigger)
+
     t_latency = 0 # latency of EEG in relation to trigger
     tmin = settings.baselineTime # seconds before stimulus onset
     t_epoch = tmax-tmin # length of epoch (seconds)
@@ -247,12 +249,13 @@ def get_epoch(inlet_EEG, inlet_marker, store_EEG, store_marker, user_id, excess_
                 look_for_trigger = 1
                 
             # Find timesample of EEG nearest stimuli onset plus tmin
-            print("timestamp_marker:", timestamp_marker)
-            print("t_latency:", t_latency)
-            print("tmin:", tmin)
-            print("timestamp_EEG:", timestamp_EEG)
-
-            i_start = np.argmin(np.abs(timestamp_marker+t_latency+tmin-timestamp_EEG)) # find closest sample in the EEG corresponding to marker plus latency and baseline
+            if timestamp_EEG is not None:
+                i_start = np.argmin(np.abs(timestamp_marker+t_latency+tmin-timestamp_EEG)) # find closest sample in the EEG corresponding to marker plus latency and baseline
+            else:
+                print("Warning: timestamp_EEG is None. Skipping i_start calculation.")
+                # Handle the situation or return from the function
+                return default_values
+            
             t_diff = timestamp_marker+t_latency+tmin-timestamp_EEG[i_start] # distance between EEG time sample and marker
             if np.abs(t_diff) > (1/fs): # Sample missing 
                 print("WARNING. Delay between EEG and marker: ",t_diff)
