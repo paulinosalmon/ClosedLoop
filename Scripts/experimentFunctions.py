@@ -398,8 +398,8 @@ def fuseImage(csvfile, alpha=0.5):
         foreground_resized = foreground_resized.convert("RGB")
         background_resized = background_resized.convert("RGB")
 
-    print("Background dimensions:", background_resized.size)
-    print("Foreground dimensions:", foreground_resized.size)
+    # print("Background dimensions:", background_resized.size)
+    # print("Foreground dimensions:", foreground_resized.size)
 
     fusedImg = Image.blend(background_resized, foreground_resized, alpha)
     
@@ -616,6 +616,7 @@ def readMarkerStream(stream_name ='alphaStream'):
             The inlet contains the alpha values (decoded EEG responses) for updating stimuli.
     
     '''
+    inlet = None
     index_alpha = []
     alpha_created = []
     streams = resolve_byprop('type', 'Markers', timeout=10)

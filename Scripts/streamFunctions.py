@@ -66,6 +66,10 @@ def clear_stream(inlet):
     '''
     Empties the EEG inlet for samples (pulls all samples from the inlet).
     '''
+    if inlet is None:
+        print("Warning: Inlet is None. Cannot clear stream.")
+        return
+
     sample0, timestamp0 = inlet.pull_chunk(max_samples=1500)
     
 def read_EEG_stream(fs=settings.samplingRate, max_buf=settings.maxBufferData):
@@ -87,7 +91,13 @@ def read_EEG_stream(fs=settings.samplingRate, max_buf=settings.maxBufferData):
         store_EEG: class object    
     '''    
     streamsEEG = resolve_byprop('type', 'EEG', timeout=1)
+
+    if not streamsEEG:
+        print("No EEG streams found!")
+        return None, None
     inlet_EEG = StreamInlet(streamsEEG[0], max_buflen=max_buf)
+    print("Number of EEG streams found:", len(streamsEEG))
+
     store_EEG = data_init(fs, 'EEG') # Initialize object
     channel_lst = settings.channelNames
     channel_lst.append('Timestamp')
@@ -135,6 +145,11 @@ def read_save_from_stream(inlet, store, user_id):
     '''
     Reads and saves data from a recording inlet.
     '''    
+
+    if inlet is None:
+        print("Warning: Inlet is None. Cannot read and save from stream.")
+        return (None, None, None)
+    
     sample, timestamp = inlet.pull_chunk()
     sample = np.asarray(sample)
     timestamp = np.asarray(timestamp) 
@@ -203,6 +218,10 @@ def get_epoch(inlet_EEG, inlet_marker, store_EEG, store_marker, user_id, excess_
             
         # read from EEG stream
         sample_EEG,timestamp_EEG,store_EEG = read_save_from_stream(inlet_EEG, store_EEG, user_id)
+
+        if excess_EEG is None:
+            excess_EEG = []
+
         if len(excess_EEG): 
             if len(sample_EEG):
                 print(sample_EEG.shape)
@@ -228,6 +247,11 @@ def get_epoch(inlet_EEG, inlet_marker, store_EEG, store_marker, user_id, excess_
                 look_for_trigger = 1
                 
             # Find timesample of EEG nearest stimuli onset plus tmin
+            print("timestamp_marker:", timestamp_marker)
+            print("t_latency:", t_latency)
+            print("tmin:", tmin)
+            print("timestamp_EEG:", timestamp_EEG)
+
             i_start = np.argmin(np.abs(timestamp_marker+t_latency+tmin-timestamp_EEG)) # find closest sample in the EEG corresponding to marker plus latency and baseline
             t_diff = timestamp_marker+t_latency+tmin-timestamp_EEG[i_start] # distance between EEG time sample and marker
             if np.abs(t_diff) > (1/fs): # Sample missing 

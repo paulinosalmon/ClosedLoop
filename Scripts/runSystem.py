@@ -41,7 +41,7 @@ print(f"Attempting to create log file: {log_file_path}\n")
 
 sys.stdout = open(log_file_path, 'w')
 
-sys.stdout = open(subject_path + '/' + settings.subjID + '/stream_logfile_subject_' + settings.subjID + '_' + time.strftime('%m-%d-%y_%H-%M') + '.log')
+# sys.stdout = open(subject_path + '/' + settings.subjID + '/stream_logfile_subject_' + settings.subjID + '_' + time.strftime('%m-%d-%y_%H-%M') + '.log')
 
 #%% Look for a recent stream from the Psychopy experimental script (will localize the experimental stream after runSystem is started).
 

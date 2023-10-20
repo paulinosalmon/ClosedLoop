@@ -268,7 +268,9 @@ def createInfoMNE(channel_names, sfreq=100):
     channel_types = ['eeg']*len(channel_names)
         
     montage = settings.montage
-    info = mne.create_info(channel_names, sfreq, channel_types, montage)
+    info = mne.create_info(channel_names, sfreq, ch_types=channel_types)
+    montage = mne.channels.make_standard_montage('standard_1020')
+    info.set_montage(montage)
     
     return info
     
