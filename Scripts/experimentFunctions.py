@@ -78,6 +78,10 @@ logWritePath = subject_path + '/' + settings.subjID + '/PsychoPyLog_subjID_' + s
 
 logWritePathKey = subject_path + '/' + settings.subjID + '/keypress_subjID_' + str(settings.subjID) + '_day_' + str(settings.expDay) + '_' + str(log_base) + '.csv'
 
+if not os.path.exists(subject_path + '/' + settings.subjID):
+    print("Creating directory...")
+    os.makedirs(subject_path + '/' + settings.subjID)
+
 logging.LogFile(logWritePath, level=logging.EXP, filemode='w')
 logging.console = True
 
@@ -280,7 +284,7 @@ def createIndices(aDom, aLure, nDom, nLure, subjID_forfile=settings.subjID, exp_
         
     print('Created {0} fused image indices, with a total no. of blocks currently created: {1}.\n'.format(len(aCatImages), str(blockIdx)))
 
-    df_imgIdxSave.to_csv(subject_path + '/createIndices_' + str(subjID_forfile) + '_day_' + str(exp_day) + '.csv') 
+    df_imgIdxSave.to_csv(subject_path + '/' + settings.subjID + '/createIndices_' + str(subjID_forfile) + '_day_' + str(exp_day) + '.csv') 
 
     blockIdx += 1
     
