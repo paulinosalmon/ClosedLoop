@@ -7,7 +7,7 @@ image 1 used in the composite image and image 2 used in the composite image (str
 # Imports
 import os
 import random
-from settings import script_path_init
+from settings import script_path_init, expDay
 
 script_path = script_path_init()
 os.chdir(script_path)
@@ -52,5 +52,5 @@ for run in list(range(0, numRuns)):
         nDom = catComb1[index][2]
         nLure = catComb1[index][3]
 
-        createIndices(aDom, aLure, nDom, nLure, subjID_forfile=subjID_prep, exp_day=2) # Experimental day (exp_day) is for naming the .csv file.
+        createIndices(aDom, aLure, nDom, nLure, subjID_forfile=subjID_prep, exp_day=expDay) # Experimental day (exp_day) is for naming the .csv file.
         

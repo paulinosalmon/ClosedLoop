@@ -284,7 +284,7 @@ def createIndices(aDom, aLure, nDom, nLure, subjID_forfile=settings.subjID, exp_
         
     print('Created {0} fused image indices, with a total no. of blocks currently created: {1}.\n'.format(len(aCatImages), str(blockIdx)))
 
-    df_imgIdxSave.to_csv(subject_path + '/' + settings.subjID + '/createIndices_' + str(subjID_forfile) + '_day_' + settings.subjID + '.csv') 
+    df_imgIdxSave.to_csv(subject_path + '/' + settings.subjID + '/createIndices_' + str(subjID_forfile) + '_day_' + str(exp_day) + '.csv') 
 
     blockIdx += 1
     

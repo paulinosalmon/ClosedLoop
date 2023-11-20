@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import os
 import shutil
-from settings import subject_path_init
+from settings import subject_path_init, subjID
 
 subject_path = subject_path_init()
 
@@ -86,7 +86,7 @@ def feedback_txt(subjects_dir, sub, feedback, feedback_from=None):
     '''
     if feedback_from == None:
         feedback_from = sub
-    fname = subjects_dir+sub+'\\feedback_subjID'+sub+'.txt'
+    fname = subjects_dir + '/' + sub + '/feedback_subjID_' + sub + '.txt'
     f = open(fname,'w')
     np.savetxt(f, [feedback],fmt='%d')
     np.savetxt(f, [feedback_from],fmt='%s')
@@ -231,3 +231,9 @@ def assign_subject(sub):
     else:  # FEEDBACK
         print('File does not exist, assigning subject as feedback person')
         assign_feedback(subjects_dir, sub, group_fname)
+
+if __name__ == "__main__":
+    sub = subjID
+    feedback = 1
+
+    feedback_txt(subject_path, sub, feedback)

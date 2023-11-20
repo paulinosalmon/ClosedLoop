@@ -21,7 +21,7 @@ import realtimeFunctions
 import streamFunctions
 
 # Extract experimental categories 
-y = realtimeFunctions.extractCat(subject_path + '/' + settings.subjID + '/createIndices_' + settings.subjID + '_day_' + settings.subjID + '.csv')
+y = realtimeFunctions.extractCat(subject_path + '/' + settings.subjID + '/createIndices_' + settings.subjID + '_day_' + str(settings.expDay) + '.csv')
 y = np.array([int(x) for x in y])
 
 #%% Tracking of print outputs. Saved as a log file to the subject ID folder.

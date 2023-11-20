@@ -9,7 +9,7 @@ import os
 
 ###### EXPERIMENTAL VARIABLES (experimentFunctions) ######
 subjID = '01' 
-expDay = '2'  # Neurofeedback day
+expDay = '1'  # Neurofeedback day
 monitor_size = [1536, 824]
 
 # Stimuli presentation times (in Hz)
