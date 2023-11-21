@@ -7,7 +7,7 @@ image 1 used in the composite image and image 2 used in the composite image (str
 # Imports
 import os
 import random
-from settings import script_path_init, expDay
+from settings import script_path_init, expDay, subjID
 
 script_path = script_path_init()
 os.chdir(script_path)
@@ -20,7 +20,7 @@ closeWin()
 global blockIdx
 global imgIdx
 
-subjID_prep = '01'
+subjID_prep = subjID
 
 numRuns = 6 # E.g. 6 runs creates 6*8*50 = 2400 composite images indices (string of path to directories of images)
 
