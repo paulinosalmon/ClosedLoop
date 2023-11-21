@@ -13,8 +13,19 @@ def classify_eeg_data(eeg_data):
 def get_eeg_data():
     return np.random.uniform(-1, 1)
 
-# Function to update the graph
-def update_graph():
+# Function to convert EEG value to RGB color
+def eeg_to_color(eeg_value):
+    if eeg_value >= 0:
+        # Green spectrum (from light green to green)
+        intensity = int(255 * (1 - eeg_value))
+        return f'#{intensity:02x}ff{intensity:02x}'
+    else:
+        # Red spectrum (from light red to red)
+        intensity = int(255 * (1 + eeg_value))
+        return f'#ff{intensity:02x}{intensity:02x}'
+
+# Function to update the graph and stimulus
+def update_graph_and_stimulus():
     while True:
         eeg_data = get_eeg_data()
         classification = classify_eeg_data(eeg_data)
@@ -32,10 +43,8 @@ def update_graph():
         canvas.draw()
 
         # Update the stimulus based on EEG data
-        if classification == 'good':
-            canvas_stimulus.itemconfig(stimulus, fill="green")
-        else:
-            canvas_stimulus.itemconfig(stimulus, fill="red")
+        color = eeg_to_color(eeg_data)
+        canvas_stimulus.itemconfig(stimulus, fill=color)
 
         time.sleep(1)  # Adjust the sleep time as needed
 
@@ -58,8 +67,8 @@ widget.pack()
 
 eeg_values = []
 
-# Start the thread for updating the graph
-thread = threading.Thread(target=update_graph)
+# Start the thread for updating the graph and stimulus
+thread = threading.Thread(target=update_graph_and_stimulus)
 thread.daemon = True  # Daemon thread will close when main window is closed
 thread.start()
 
