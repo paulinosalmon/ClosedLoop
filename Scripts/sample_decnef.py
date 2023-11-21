@@ -11,7 +11,26 @@ def classify_eeg_data(eeg_data):
 
 # Function to simulate EEG data
 def get_eeg_data():
-    return np.random.uniform(-1, 1)
+    # Simulate raw EEG data between 10 to 100 microvolts
+    raw_eeg = np.random.uniform(10, 100)
+
+    # Improved normalization
+    # Assuming the expected mean is 55 (midpoint of 10 to 100)
+    # and a standard deviation that makes sense for this range, say 20
+    mean_eeg = 55
+    std_dev_eeg = 20
+
+    # Z-score normalization
+    z_normalized_eeg = (raw_eeg - mean_eeg) / std_dev_eeg
+
+    # Scale Z-score to -1 to 1 range
+    # Assuming most values fall within 3 standard deviations
+    # This will clip outliers beyond 3 standard deviations
+    max_scale = 3
+    scaled_eeg = max(-1, min(1, z_normalized_eeg / max_scale))
+
+    return scaled_eeg
+
 
 # Function to convert EEG value to RGB color
 def eeg_to_color(eeg_value):
