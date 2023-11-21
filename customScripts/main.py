@@ -1,7 +1,7 @@
 import threading
 import time
-import eeg_data_preprocessing as edp
-import eeg_visualization as ev
+import eeg_classification as ec  # Handles EEG data classification and preprocessing
+import eeg_visualization as ev   # Handles EEG data visualization and GUI
 
 def main():
     root, canvas_stimulus, stimulus, ax, canvas = ev.setup_gui(ev.update_graph_and_stimulus)
@@ -9,7 +9,8 @@ def main():
 
     def update_loop():
         while True:
-            ev.update_graph_and_stimulus(eeg_values, ax, canvas, canvas_stimulus, stimulus, edp.get_eeg_data, edp.classify_eeg_data, edp.eeg_to_color)
+            # Update the graph and stimulus using the EEG data processing, classification, and visualization functions
+            ev.update_graph_and_stimulus(eeg_values, ax, canvas, canvas_stimulus, stimulus, ec.get_eeg_data, ec.classify_eeg_data, ec.eeg_to_color)
             time.sleep(1)
 
     thread = threading.Thread(target=update_loop)
