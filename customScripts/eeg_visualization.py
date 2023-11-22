@@ -19,11 +19,9 @@ def setup_gui(update_function):
 
     return root, canvas_stimulus, stimulus, ax, canvas
 
-def update_graph_and_stimulus(eeg_values, ax, canvas, canvas_stimulus, stimulus, get_eeg_data, classify_eeg_data, eeg_to_color):
-    eeg_data = get_eeg_data()
-    classification = classify_eeg_data(eeg_data)
-    eeg_values.append(eeg_data)
-    print(f"EEG Value = {eeg_data:.2f} ({classification})")
+def update_graph_and_stimulus(eeg_values, ax, canvas, canvas_stimulus, stimulus, color, classification):
+    eeg_data = eeg_values[-1]  # Assuming the latest EEG data is the last item in the list
+    print(f"EEG Value = {eeg_data:.2f} ({classification})")  # Print the EEG value and classification
 
     ax.clear()
     ax.plot(eeg_values, marker='o')
@@ -34,5 +32,4 @@ def update_graph_and_stimulus(eeg_values, ax, canvas, canvas_stimulus, stimulus,
     ax.axhline(0, color='gray', linestyle='--')
     canvas.draw()
 
-    color = eeg_to_color(eeg_data)
     canvas_stimulus.itemconfig(stimulus, fill=color)

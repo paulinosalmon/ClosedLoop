@@ -20,7 +20,3 @@ def train_logistic_regression(eeg_data, labels):
     model = LogisticRegression()
     model.fit(eeg_data, labels)
     return model
-
-# Generate and train the model
-sample_eeg_data, sample_labels = generate_sample_data()
-logistic_model = train_logistic_regression(sample_eeg_data, sample_labels)
