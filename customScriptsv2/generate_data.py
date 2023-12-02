@@ -1,3 +1,5 @@
+# Part 1 of the Pipeline
+
 import numpy as np
 import os
 

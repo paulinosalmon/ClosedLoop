@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import pickle
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
@@ -42,6 +43,10 @@ def main():
     best_accuracy = 0
     best_model = None
 
+    # Create the log directory if it doesn't exist
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
     # Configure logging
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -72,7 +77,7 @@ def main():
     if best_model is not None:
         model_path = os.path.join(model_dir, 'best_logistic_regression_model.pkl')
         with open(model_path, 'wb') as f:
-            np.save(f, best_model)
+            pickle.dump(best_model, f)
         logging.info(f"Best model saved with accuracy: {best_accuracy}")
 
 if __name__ == "__main__":

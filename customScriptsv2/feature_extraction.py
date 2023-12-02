@@ -1,3 +1,5 @@
+# Part 3 of the Pipeline
+
 import numpy as np
 import os
 from scipy.signal import welch
