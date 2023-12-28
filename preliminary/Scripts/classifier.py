@@ -49,6 +49,15 @@ def reshape_eeg_data(eeg_data):
     logging.info(f"Data reshaped to {reshaped_data.shape}")
     return reshaped_data
 
+def loro_cross_validation(data_splits):
+    error_rates = []
+    for X_train, X_test, y_train, y_test in data_splits:
+        trained_classifier = train_classifier(X_train, y_train)
+        predictions = trained_classifier.predict(X_test)
+        error_rate = 1 - accuracy_score(y_test, predictions)
+        error_rates.append(error_rate)
+    return np.mean(error_rates)
+
 # Function to compute exponentially weighted moving average
 def compute_ewma(data, alpha=0.5):
     logging.info("Computing exponentially weighted moving average...")

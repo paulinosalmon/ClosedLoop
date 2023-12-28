@@ -8,6 +8,7 @@ import data_preprocessing
 import artifact_rejection
 import classifier
 import feedback_generator
+import evaluation
 import settings
 
 from sklearn.linear_model import LogisticRegression
@@ -41,14 +42,15 @@ def run_pipeline(root, label):
     cleaned_data = artifact_rejection.artifact_rejection_pipeline(reshaped_data, reshaped_data)
     print_signal_summary(cleaned_data, "Artifact Rejection")
 
-    # Classification
-    print("Running Classification...")
+    # Classification and Evaluation
+    print("Running Classification and Evaluation...")
     y_labels = np.random.randint(0, 2, cleaned_data.shape[0])
     X_train, X_test, y_train, y_test = train_test_split(cleaned_data, y_labels, test_size=0.25)
 
     trained_classifier = classifier.train_classifier(X_train, y_train)
     bias_offset = classifier.compute_bias_offset(X_train, y_train)
-    feedback_signals = classifier.test_classifier_realtime(trained_classifier, X_test, bias_offset)
+    feedback_signals = classifier.test_classifier_realtime(trained_classifier, X_test, bias_offset)    # Capture predictions
+    predictions = trained_classifier.predict(X_test)
 
     print("Feedback Signals:", feedback_signals)
     print("Number of Feedback Signals:", len(feedback_signals))
@@ -57,6 +59,13 @@ def run_pipeline(root, label):
     print("Generating Visual Feedback...")
     task_relevant_category = 'female'  # Example category
     feedback_generator.generate_feedback_image(feedback_signals, task_relevant_category, 'outdoor', label)
+
+    # Calculate and print classifier error rate
+    print("=============== Evaluating Model ===============")
+    classifier_error_rate = evaluation.calculate_error_rate(predictions, y_test)
+    print(f"Classifier Error Rate: {classifier_error_rate}")
+    rerr = evaluation.calculate_rerr(classifier_error_rate)
+    print(f"Relative Error Rate Reduction (RERR): {rerr}")
 
     print("Pipeline execution completed.")
 
