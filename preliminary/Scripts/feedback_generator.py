@@ -30,27 +30,33 @@ def get_random_image_path(category):
 
 def update_gui(root, classifier_outputs, category1, category2, image_label, graph_frame):
     alpha_values = [transfer_function(output) for output in classifier_outputs]
-    averaged_alpha = np.mean(alpha_values[-3:])
 
-    image_path1 = get_random_image_path(category1)
-    image_path2 = get_random_image_path(category2)
-    image1 = load_and_process_image(image_path1)
-    image2 = load_and_process_image(image_path2)
+    # Calculate the number of composite images to display
+    num_images = min(len(alpha_values), len(classifier_outputs))
 
-    composite_image = create_composite_image(image1, image2, averaged_alpha)
-    img = ImageTk.PhotoImage(composite_image)
-    image_label.config(image=img)
-    image_label.image = img
+    # Create a subplot for each composite image and corresponding graph
+    for i in range(num_images):
+        averaged_alpha = alpha_values[i]
 
-    def update_plot():
+        image_path1 = get_random_image_path(category1)
+        image_path2 = get_random_image_path(category2)
+        image1 = load_and_process_image(image_path1)
+        image2 = load_and_process_image(image_path2)
+
+        composite_image = create_composite_image(image1, image2, averaged_alpha)
+        img = ImageTk.PhotoImage(composite_image)
+        image_label.config(image=img)
+        image_label.image = img
+
+        # Create a dynamic graph
         plt.figure(figsize=(6, 4))
-        plt.plot(classifier_outputs, label='Real-Time Category Decoding')
+        plt.plot(classifier_outputs[:i+1], label='Real-Time Category Decoding')
         plt.ylim([-1, 1])
         plt.xlabel('Trial Number')
         plt.ylabel('Real-Time Category Decoding')
         plt.legend()
 
-        # Clear the previous graph and draw a new one
+        # Clear the previous graph and draw the updated one
         for widget in graph_frame.winfo_children():
             widget.destroy()
         canvas = FigureCanvasTkAgg(plt.gcf(), master=graph_frame)
@@ -58,8 +64,11 @@ def update_gui(root, classifier_outputs, category1, category2, image_label, grap
         canvas_widget.pack(fill=tk.BOTH, expand=True)
         canvas.draw()
 
-    # Schedule the plot update
-    root.after(0, update_plot)
+        # Update the GUI in real-time
+        root.update_idletasks()
+        root.update()
+        root.after(1000)
+        
 
 def run_gui(classifier_outputs, category1, category2):
     root = tk.Tk()
