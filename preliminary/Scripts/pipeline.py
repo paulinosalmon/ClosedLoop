@@ -10,6 +10,9 @@ import classifier
 import feedback_generator
 import evaluation
 import settings
+import threading
+
+import matplotlib.pyplot as plt
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -55,10 +58,22 @@ def run_pipeline(root, label):
     print("Feedback Signals:", feedback_signals)
     print("Number of Feedback Signals:", len(feedback_signals))
 
-    # Generate Visual Feedback
+     # Generate Visual Feedback
     print("Generating Visual Feedback...")
     task_relevant_category = 'female'  # Example category
-    feedback_generator.generate_feedback_image(feedback_signals, task_relevant_category, 'outdoor', label)
+
+    # Create frames for image and graph in the GUI
+    image_frame = tk.Frame(root)
+    image_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    graph_frame = tk.Frame(root)
+    graph_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+
+    # Create label for image
+    image_label = tk.Label(image_frame)
+    image_label.pack()
+
+    # Update the GUI with feedback signals
+    feedback_generator.update_gui(root, feedback_signals, task_relevant_category, 'outdoor', image_label, graph_frame)
 
     # Calculate and print classifier error rate
     print("=============== Evaluating Model ===============")
@@ -69,14 +84,26 @@ def run_pipeline(root, label):
 
     print("Pipeline execution completed.")
 
+def run_pipeline_in_thread(root, label):
+    thread = threading.Thread(target=run_pipeline, args=(root, label))
+    thread.start()
+
 def main():
     root = tk.Tk()
     root.title("EEG Feedback Display")
     label = tk.Label(root)
     label.pack()
 
+    def on_close():
+        plt.close('all')  # Close all Matplotlib figures
+        root.quit()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
+
     run_pipeline(root, label)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
