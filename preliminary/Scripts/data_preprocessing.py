@@ -1,71 +1,72 @@
-# data_preprocessing.py
 import numpy as np
+from pylsl import StreamInlet, resolve_stream
 import mne
-import settings
+from scipy.signal import detrend
+from settings import (samplingRate, channelNames, 
+                      baselineTime, epochTime, 
+                      rejectChannels, channelNamesExcluded)
+import keyboard
 
-def preprocess_eeg_data(eeg_data):
-    sfreq = settings.samplingRate
-    event_id = 1
-    tmin = -0.1
-    tmax = 0.8
+# Resolve the EEG stream
+print("Looking for an EEG stream...")
+streams = resolve_stream('type', 'EEG')
+inlet = StreamInlet(streams[0])
 
-    ch_names = settings.channelNames
-    ch_types = ['eeg'] * len(ch_names)
-    info = mne.create_info(ch_names=ch_names, sfreq=sfreq, ch_types=ch_types)
-
-    # Transpose eeg_data to match MNE structure (channels x samples)
-    eeg_data = eeg_data.T
+def preprocess_eeg(data, channel_names):
+    # Exclude specified channels if rejection is enabled
+    if rejectChannels:
+        exclude_indices = [channel_names.index(ch) for ch in channelNamesExcluded if ch in channel_names]
+        data = np.delete(data, exclude_indices, axis=0)
+        channel_names = [ch for ch in channel_names if ch not in channelNamesExcluded]
 
     # Linear detrending
-    eeg_data = mne.filter.detrend(eeg_data, axis=1)
+    data_detrended = detrend(data, axis=1)
 
-    raw = mne.io.RawArray(eeg_data, info)
-    raw.filter(None, 40, fir_design='firwin', phase='zero-double')
-    raw.resample(settings.samplingRateResample)
+    # Low-pass filtering
+    data_filtered = mne.filter.filter_data(data_detrended, sfreq=samplingRate, l_freq=None, h_freq=40, method='fir', phase='zero-double')
 
-    n_samples = eeg_data.shape[1]
-    events = np.array([[i, 0, event_id] for i in range(n_samples)])
+    # Downsampling
+    data_downsampled = mne.filter.resample(data_filtered, down=samplingRate // 100)
 
-    epochs = mne.Epochs(raw, events, event_id, tmin, tmax, baseline=(None, 0), preload=True)
-    epochs.apply_baseline(baseline=(None, 0))
+    # Baseline correction
+    baseline = np.mean(data_downsampled[:, :int(0.1 * 100)], axis=1)
+    data_baseline_corrected = data_downsampled - baseline[:, None]
 
-    # Manual Z-scoring (standardizing)
-    epochs_data = epochs.get_data()
-    epochs_data = (epochs_data - epochs_data.mean(axis=2, keepdims=True)) / epochs_data.std(axis=2, keepdims=True)
+    # Z-scoring
+    data_zscored = (data_baseline_corrected - np.mean(data_baseline_corrected)) / np.std(data_baseline_corrected)
 
-    return epochs_data
+    return data_zscored
 
-def split_data_for_loro(eeg_data, labels, num_runs=settings.numRuns, blocks_per_run=settings.numBlocks):
-    trials_per_block = len(eeg_data) // (num_runs * blocks_per_run)
-    splits = []
+def process_continuous_eeg(gui_queue, data_transfer_queue):
+    epoch_duration = 0.9  # 900 ms
+    buffer_size = int(epoch_duration * samplingRate)  # Number of samples per epoch
+    eeg_buffer = np.empty((len(channelNames), 0))
+    label_buffer = []
 
-    for run in range(num_runs):
-        start_idx = run * blocks_per_run * trials_per_block
-        end_idx = start_idx + blocks_per_run * trials_per_block
+    while True:
+        sample, timestamp = inlet.pull_sample()
+        eeg_sample = np.array(sample[:-1]).reshape(len(channelNames), -1)  # Exclude the label
+        label = sample[-1]  # Last element is the label
 
-        # Check if indices are within the bounds of the dataset
-        if start_idx >= len(eeg_data) or end_idx > len(eeg_data):
-            print(f"Skipping run {run}: start_idx={start_idx}, end_idx={end_idx}, data_length={len(eeg_data)}")
-            continue
+        eeg_buffer = np.hstack((eeg_buffer, eeg_sample))
+        label_buffer.append(label)
+        message = f"[Data Preprocessing] Current buffer size: {eeg_buffer.shape[1]}"
+        print(message) 
+        gui_queue.put(message)  
 
-        # Ensure we have data for the test set
-        if end_idx - start_idx <= 0:
-            print(f"No data for run {run}: start_idx={start_idx}, end_idx={end_idx}")
-            continue
+        if eeg_buffer.shape[1] >= buffer_size:
+            processed_data = preprocess_eeg(eeg_buffer[:, :buffer_size], channelNames)
+            eeg_buffer = eeg_buffer[:, buffer_size:]  # Remove processed data from buffer
+            current_labels = label_buffer[:buffer_size]
+            label_buffer = label_buffer[buffer_size:]  # Remove processed labels from buffer
 
-        X_test = eeg_data[start_idx:end_idx]
-        y_test = labels[start_idx:end_idx]
-        X_train = np.concatenate([eeg_data[:start_idx], eeg_data[end_idx:]])
-        y_train = np.concatenate([labels[:start_idx], labels[end_idx:]])
+            print(f"[Data Preprocessing] Processed an EEG epoch. Data shape: {processed_data.shape}")
+            gui_queue.put(f"[Data Preprocessing] Processed an EEG epoch. Data shape: {processed_data.shape}")
+            print(f"[Data Preprocessing] Labels for epoch: {current_labels}")
+            gui_queue.put(f"[Data Preprocessing] Labels for epoch: {current_labels}")
 
-        print(f"Run {run}: X_train shape={X_train.shape}, X_test shape={X_test.shape}")
-        splits.append((X_train, X_test, y_train, y_test))
-
-    return splits
-
-if __name__ == "__main__":
-    file_path = '../subjectsData/subject_00/subject_00_day_1_eeg_data.npy'  # Update with the actual path
-    eeg_data = np.load(file_path)
-    preprocessed_data = preprocess_eeg_data(eeg_data)
-
+def run_data_preprocessing(gui_queue, data_transfer_queue):
+    print("[Data Preprocessing] Starting preprocessing...")
+    gui_queue.put("[Data Preprocessing] Starting preprocessing...")
+    process_continuous_eeg(gui_queue, data_transfer_queue)
 

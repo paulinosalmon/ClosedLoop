@@ -1,101 +1,111 @@
-import numpy as np
-from PIL import Image, ImageOps, ImageTk
-import tkinter as tk
 import os
-import settings
+import numpy as np
+from PIL import Image, ImageTk, ImageOps
+from queue import Queue
 import random
-import matplotlib.pyplot as plt
+import tkinter as tk
+import time
+
+from datetime import datetime
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import sys
+from matplotlib.figure import Figure
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+def adjust_pixel_range(image_array):
+    # Adjust pixel values to have 10% in the ranges 0-46 and 210-255
+    quantiles = np.quantile(image_array, [0.1, 0.9])
+    low, high = quantiles[0], quantiles[1]
+    image_array = np.where(image_array < low, np.interp(image_array, [0, low], [0, 46]), image_array)
+    image_array = np.where(image_array > high, np.interp(image_array, [high, 255], [210, 255]), image_array)
+    return image_array
 
-def transfer_function(classifier_output):
-    return 0.81 * sigmoid(classifier_output) + 0.17
+def update_image(image_label, image_stimuli_path='../imageStimuli', alpha=0.5):
+    # Select random categories for face and scene
+    face_category = random.choice(['female', 'male'])
+    scene_category = random.choice(['indoor', 'outdoor'])
 
-def load_and_process_image(image_path):
-    img = Image.open(image_path).convert('L')
-    img = img.resize((175, 175))
-    img = ImageOps.equalize(img)
-    return img
+    # Choose random images from the selected categories
+    face_image_path = os.path.join(image_stimuli_path, face_category, random.choice(os.listdir(os.path.join(image_stimuli_path, face_category))))
+    scene_image_path = os.path.join(image_stimuli_path, scene_category, random.choice(os.listdir(os.path.join(image_stimuli_path, scene_category))))
 
-def create_composite_image(image1, image2, alpha):
-    return Image.blend(image1, image2, alpha)
+    # Load and convert images to grayscale
+    image1 = Image.open(face_image_path).convert('L')
+    image2 = Image.open(scene_image_path).convert('L')
 
-def get_random_image_path(category):
-    base_dir = os.path.join(settings.base_dir_init(), 'imageStimuli', category)
-    image_name = random.choice(os.listdir(base_dir))
-    return os.path.join(base_dir, image_name)
+    # Resize images and blend them using the alpha value
+    image1 = ImageOps.fit(image1, (175, 175), Image.Resampling.LANCZOS)
+    image2 = ImageOps.fit(image2, (175, 175), Image.Resampling.LANCZOS)
+    mixed_image = Image.blend(image1, image2, 1)
 
-def update_gui(root, classifier_outputs, category1, category2, image_label, graph_frame):
-    alpha_values = [transfer_function(output) for output in classifier_outputs]
+    # Adjust pixel range
+    mixed_image_array = np.array(mixed_image)
+    mixed_image_array = adjust_pixel_range(mixed_image_array)
+    mixed_image = Image.fromarray(mixed_image_array.astype('uint8'))
 
-    # Calculate the number of composite images to display
-    num_images = min(len(alpha_values), len(classifier_outputs))
+    # Convert to a format compatible with Tkinter and update the image label
+    tk_image = ImageTk.PhotoImage(mixed_image)
+    image_label.config(image=tk_image)
+    image_label.image = tk_image  # Keep a reference to the image
 
-    # Create a subplot for each composite image and corresponding graph
-    for i in range(num_images):
-        averaged_alpha = alpha_values[i]
+def realtime_graph(root, right_frame, queue_graph_update):
+    # Create a figure for the plot
+    fig = Figure(figsize=(5, 4), dpi=100)
+    ax = fig.add_subplot(111)
 
-        image_path1 = get_random_image_path(category1)
-        image_path2 = get_random_image_path(category2)
-        image1 = load_and_process_image(image_path1)
-        image2 = load_and_process_image(image_path2)
+    # Initialize lists to store the data
+    x_data = []
+    y_data = []
 
-        composite_image = create_composite_image(image1, image2, averaged_alpha)
-        img = ImageTk.PhotoImage(composite_image)
-        image_label.config(image=img)
-        image_label.image = img
+    # Function to update the graph
+    def update_graph():
+        nonlocal x_data, y_data
+        # Check if new data is available to update the graph
+        while not queue_graph_update.empty():
+            # Get the latest classifier output and add it to the data lists
+            classifier_output = queue_graph_update.get()
+            x_data.append(len(x_data) + 1)  # Increment trial number
+            y_data.append(classifier_output)  # Append the classifier output
+            
+            # Clear the previous plot and plot the updated data
+            ax.clear()
+            ax.plot(x_data, y_data, '-o', color='blue')
+            ax.axhline(0, color='black', linewidth=1)  # Add a horizontal line at y=0
+            ax.axvline(0, color='black', linewidth=1)  # Add a vertical line at x=0
+            ax.set_title("Feedback Observation (Task-Relevant Category: Scenes)")
+            ax.set_xlabel("Trial Number")
+            ax.set_ylabel("Real-Time Category Decoding")
+            ax.set_xlim(left=max(0, len(x_data) - 50), right=len(x_data) + 1)
+            ax.set_ylim(min(y_data)-0.1, max(y_data)+0.1)
 
-        # Create a dynamic graph
-        plt.figure(figsize=(6, 4))
-        plt.plot(classifier_outputs[:i+1], label='Real-Time Category Decoding')
-        plt.ylim([-1, 1])
-        plt.xlabel('Trial Number')
-        plt.ylabel('Real-Time Category Decoding')
-        plt.legend()
+            # Redraw the canvas with the new data
+            canvas.draw()
 
-        # Clear the previous graph and draw the updated one
-        for widget in graph_frame.winfo_children():
-            widget.destroy()
-        canvas = FigureCanvasTkAgg(plt.gcf(), master=graph_frame)
-        canvas_widget = canvas.get_tk_widget()
-        canvas_widget.pack(fill=tk.BOTH, expand=True)
-        canvas.draw()
+        # Schedule the function to run again after a short delay for continuous updating
+        root.after(100, update_graph)
 
-        # Update the GUI in real-time
-        root.update_idletasks()
-        root.update()
-        root.after(1000)
-        
+    # Add the plot to the Tkinter window
+    canvas = FigureCanvasTkAgg(fig, master=right_frame)
+    canvas.draw()
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-def run_gui(classifier_outputs, category1, category2):
-    root = tk.Tk()
-    root.title("EEG Feedback Display")
+    # Call the update function to start the updating process
+    update_graph()
 
-    # Create frames for image and graph
-    image_frame = tk.Frame(root)
-    image_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    graph_frame = tk.Frame(root)
-    graph_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+def run_feedback_generator(queue_gui, queue_classifier, label_image, queue_graph_update):
+    queue_gui.put(f"[{datetime.now()}] [Feedback Generator] Feedback Generation Initiated.")
+    image_stimuli_path = '../imageStimuli'  # Path to the image stimuli
 
-    # Create label for image
-    image_label = tk.Label(image_frame)
-    image_label.pack()
+    while True:
+        try:
+            visibility_score = queue_classifier.get(block=True)
+            queue_gui.put(f"[{datetime.now()}] [Feedback Generator] Received alpha from classifier stream: {visibility_score}")
 
-    # Initial update of GUI components
-    update_gui(classifier_outputs, category1, category2, image_label, graph_frame)
+            # Generate the image based on the received visibility score
+            tk_image = update_image(label_image, image_stimuli_path, alpha=visibility_score)
+            queue_gui.put(f"[{datetime.now()}] [Feedback Generator] Image Generated.")
 
-    def on_close():
-        print("Closing GUI...")
-        root.quit()
-        sys.exit(0)
+            # Put the visibility score into the queue for the graph update
+            queue_graph_update.put(visibility_score)
 
-    root.protocol("WM_DELETE_WINDOW", on_close)
-
-    root.mainloop()
-
-if __name__ == "__main__":
-    classifier_outputs = [0.5, -0.3, 0.8]  # Placeholder classifier outputs
-    run_gui(classifier_outputs, 'female', 'outdoor')
+        except Exception as e:
+            queue_gui.put(f"[{datetime.now()}] [Feedback Generator] Error: {e}")

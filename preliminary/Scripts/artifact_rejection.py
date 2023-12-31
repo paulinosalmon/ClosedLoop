@@ -1,55 +1,68 @@
 import numpy as np
-import settings
+from numpy.linalg import svd
+from pylsl import StreamInlet, resolve_stream
+from settings import channelNames, samplingRate
+from datetime import datetime
 
-def perform_ssp(X_training, X_noisy_test, variance_threshold):
-    # Perform SVD on the training data
-    U, S, V = np.linalg.svd(X_training, full_matrices=False)
+def generate_synthetic_training_data(num_channels, num_samples, random_state=42):
+    np.random.seed(random_state)
+    return np.random.randn(num_channels, num_samples) * 1e-6
 
-    # Calculate the total variance
-    total_variance = np.sum(S**2)
+def perform_svd_and_select_components(X_training, variance_threshold=0.1):
+    U, S, Vt = svd(X_training, full_matrices=False)
+    variance_explained = (S**2) / np.sum(S**2)
+    significant_components = U[:, variance_explained >= variance_threshold]
+    return significant_components
 
-    # Determine the number of components to retain
-    retained_variance = S**2 / total_variance
-    retained_components = np.where(retained_variance >= variance_threshold)[0]
+def denoise_data(X_noisy_test, significant_components, queue_gui):
+    if significant_components.size == 0:
+        message = "[{datetime.now()}] [Artifact Rejection] No significant components found. Skipping denoising."
+        print(message)
+        queue_gui.put(message)
+        return X_noisy_test
+    return X_noisy_test - X_noisy_test.dot(significant_components).dot(significant_components.T)
 
-    if len(retained_components) == 0:
-        print("No components retained. Adjusting to retain at least one component.")
-        retained_components = [0]  # Retain at least the first component
+def process_artifact_rejection(X_training, queue_artifact_rejection, queue_gui):
+    streams = resolve_stream('type', 'EEG')
+    inlet = StreamInlet(streams[0])
 
-    # Project out the retained components from the test data
-    U_retained = U[:, retained_components]
-    V_retained = V[retained_components, :]
+    buffer_size = int(0.9 * samplingRate)
+    X_noisy_test = np.empty((len(channelNames), 0))
+    label_buffer = []
 
-    # Handle the case where only one component is retained
-    if len(retained_components) == 1:
-        singular_value_matrix = np.diag(S[retained_components])
-        reconstructed_signal = U_retained @ singular_value_matrix @ V_retained
-    else:
-        reconstructed_signal = U_retained @ np.diag(S[retained_components]) @ V_retained.T
+    significant_components = perform_svd_and_select_components(X_training)
+    message = f"[{datetime.now()}] [Artifact Rejection] Significant components shape: {significant_components.shape}"
+    print(message)
+    queue_gui.put(message)
 
-    # Subtract the reconstructed signal from the original noisy test data
-    X_clean_test = X_noisy_test - reconstructed_signal
+    while True:
+        sample, timestamp = inlet.pull_sample()
+        eeg_sample = np.array(sample[:-1]).reshape(len(channelNames), -1)
+        label = sample[-1]  # Last element is the label
 
-    return X_clean_test
+        X_noisy_test = np.hstack((X_noisy_test, eeg_sample))
+        label_buffer.append(label)
 
-def artifact_rejection_pipeline(X_training, X_noisy_test):
-    """
-    Pipeline for artifact rejection using SSP.
+        if X_noisy_test.shape[1] >= buffer_size:
+            X_clean_test = denoise_data(X_noisy_test, significant_components, queue_gui)
+            current_labels = label_buffer[:buffer_size]
 
-    :param X_training: Training set matrix [channels x time points]
-    :param X_noisy_test: Test set matrix before denoising [channels x time points]
-    :return: X_clean_test - Denoised test set matrix [channels x time points]
-    """
-    if settings.SSP:
-        return perform_ssp(X_training, X_noisy_test, settings.thresholdSSP)
-    else:
-        return X_noisy_test  # Return the original data if SSP is not enabled
+            # Push the processed data and labels to the queue
+            queue_artifact_rejection.put((X_clean_test, current_labels))
+            message = f"[{datetime.now()}] [Artifact Rejection] Data pushed to queue. Shape: {X_clean_test.shape}"
+            print(message)
+            queue_gui.put(message)
+            queue_gui.put(f"===================================")
 
-# The rest of the script remains the same
+            # Reset for next batch
+            X_noisy_test = np.empty((len(channelNames), 0))
+            label_buffer = label_buffer[buffer_size:]
 
-
-if __name__ == "__main__":
-    # Example usage with simulated data for demonstration
-
-    # Simulate some EEG data for training and testing
-   pass
+def run_artifact_rejection(queue_artifact_rejection, queue_gui):
+    num_channels = len(channelNames)
+    num_samples = 450 * 10  # Example values for simulation
+    X_training = generate_synthetic_training_data(num_channels, num_samples)
+    message = f"[{datetime.now()}] [Artifact Rejection] Starting artifact rejection..."
+    print(message)
+    queue_gui.put(message)
+    process_artifact_rejection(X_training, queue_artifact_rejection, queue_gui)

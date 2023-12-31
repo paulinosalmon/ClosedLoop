@@ -29,6 +29,10 @@ samplingRateResample = 100
 baselineTime = -0.1 # Baseline for each epoch (i.e. before stimuli onset) (seconds)
 epochTime = 0.800 # Seconds (i.e. after stimuli onset) (seconds)
 
+# Parameters for continuous data streaming
+NUM_TRIALS = 10  # Number of trials for testing, set to None for infinite loop
+CONTINUOUS_STREAM = True if NUM_TRIALS is None else False
+
 maxBufferData = 2 # Maximum amount of data to store in the buffer (seconds)
 
 # Channels for EPOC X
@@ -51,6 +55,10 @@ thresholdSSP = 0.1 # SSP variance threshold for rejection of SSP projections
 ###### EEG real-time classification (realtimeFunctions) ###### 
 from sklearn.linear_model import LogisticRegression # Import and specify classifier of interest
 classifier = LogisticRegression(solver='saga', C=1, random_state=1, penalty='l1', max_iter=100)
+
+# For saving first time model
+config = {"is_model_generated": False}
+config_score = {"best_score": 0.0}
 
 ###### DIRECTORY STRUCTURE ###### 
 def base_dir_init(): # Base directory for ClosedLoop GitHub
