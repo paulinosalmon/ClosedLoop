@@ -35,7 +35,7 @@ def update_image(image_label, image_stimuli_path='../imageStimuli', alpha=0.5):
     # Resize images and blend them using the alpha value
     image1 = ImageOps.fit(image1, (175, 175), Image.Resampling.LANCZOS)
     image2 = ImageOps.fit(image2, (175, 175), Image.Resampling.LANCZOS)
-    mixed_image = Image.blend(image1, image2, 1)
+    mixed_image = Image.blend(image1, image2, alpha)
 
     # Adjust pixel range
     mixed_image_array = np.array(mixed_image)
