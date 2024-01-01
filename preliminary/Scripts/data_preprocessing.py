@@ -69,4 +69,3 @@ def run_data_preprocessing(gui_queue, data_transfer_queue):
     print("[Data Preprocessing] Starting preprocessing...")
     gui_queue.put("[Data Preprocessing] Starting preprocessing...")
     process_continuous_eeg(gui_queue, data_transfer_queue)
-

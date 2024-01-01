@@ -2,11 +2,21 @@ import tkinter as tk
 import threading
 import numpy as np
 import os
+import sys
+import signal
 from queue import Queue
 from data_preprocessing import run_data_preprocessing
 from artifact_rejection import run_artifact_rejection
 from classifier import run_classifier, calculate_mean_error_rate_cv
 from feedback_generator import run_feedback_generator, realtime_graph
+
+def handle_keyboard_interrupt(signal, frame):
+    print("Interrupt received, evaluating model before shutting down.")
+    X_test = np.load(os.path.join("../data/", "X_test.npy"))
+    y_test = np.load(os.path.join("../data/", "y_test.npy"))
+    calculate_mean_error_rate_cv(X_test, y_test)
+    print("Evaluation saved in ../reports/. Shutting down.")
+    sys.exit(0)
 
 def update_output(gui_queue, text_widget, image_label=None):
     while True:
@@ -83,11 +93,5 @@ def setup_gui():
     root.mainloop()
 
 if __name__ == "__main__":
-    try:
-        setup_gui()
-    except KeyboardInterrupt:
-        print("Interrupt received, evaluating model before shutting down.")
-        X_test = np.load(os.path.join("../data/", "X_test.npy"))
-        y_test = np.load(os.path.join("../data/", "y_test.npy"))
-        calculate_mean_error_rate_cv(X_test, y_test)
-        print("Evaluation saved in ../reports/. Shutting down.")
+    signal.signal(signal.SIGINT, handle_keyboard_interrupt)
+    setup_gui()

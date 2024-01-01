@@ -8,6 +8,7 @@ from settings import classifier, config, config_score, channelNames
 from datetime import datetime
 from sklearn.model_selection import cross_val_score, cross_val_predict, StratifiedKFold, train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.utils import shuffle
 from sklearn.base import clone
 
 # ================== Model Evaluation Functions ================== #
@@ -15,22 +16,18 @@ from sklearn.base import clone
 def calculate_mean_error_rate_cv(test_X, test_y, n_trials=50, n_folds=10, model_path="../model/best_model.pkl", report_path="../reports/classifier_report.txt"):
     """
     Calculate the mean classifier error rate over N trials using cross-validation.
-
-    Parameters:
-    - test_X: Test features
-    - test_y: True labels for the test data
-    - n_trials: Number of trials to perform
-    - n_folds: Number of folds for cross-validation
-    - model_path: Path to the saved model
-    - report_path: Path to save the report
     """
-    error_rates = []
+    mean_trial_error_rates = []  # List to store mean error rate for each trial
+
     kf = StratifiedKFold(n_splits=n_folds)
 
-    for _ in range(n_trials):
-        for train_index, test_index in kf.split(test_X, test_y):
-            X_train, X_test = test_X[train_index], test_X[test_index]
-            y_train, y_test = test_y[train_index], test_y[test_index]
+    for trial in range(n_trials):
+        trial_error_rates = []  # List to store error rates for each fold in this trial
+        randomized_X, randomized_y = shuffle(test_X, test_y, random_state=trial)
+
+        for train_index, test_index in kf.split(randomized_X, randomized_y):
+            X_train, X_test = randomized_X[train_index], randomized_X[test_index]
+            y_train, y_test = randomized_y[train_index], randomized_y[test_index]
 
             # Load the saved model
             model = joblib.load(model_path)
@@ -39,16 +36,25 @@ def calculate_mean_error_rate_cv(test_X, test_y, n_trials=50, n_folds=10, model_
             model.fit(X_train, y_train)
             predicted_y = model.predict(X_test)
 
-            # Calculate error rate and append to list
+            # Calculate error rate for the fold and append to the trial list
             error_rate = 1 - accuracy_score(y_test, predicted_y)
-            error_rates.append(error_rate)
+            trial_error_rates.append(error_rate)
 
-    # Calculate the mean error rate
-    mean_error_rate = np.mean(error_rates)
+        # Calculate the mean error rate for this trial
+        mean_trial_error_rate = np.mean(trial_error_rates)
+        mean_trial_error_rates.append(mean_trial_error_rate)
 
-    # Write the error rate to a file
+        print(f"Trial {trial + 1} Error Rate: {mean_trial_error_rate * 100}%")
+
+    # Calculate the overall mean error rate
+    mean_error_rate = np.mean(mean_trial_error_rates)
+
+    # Write the error rates to a file
     with open(report_path, "w") as file:
-        file.write(f"Mean Classifier Error Rate (over {n_trials} trials with {n_folds}-fold CV): {mean_error_rate * 100}%\n")
+        file.write(f"Individual Trial Error Rates:\n")
+        for i, error_rate in enumerate(mean_trial_error_rates, 1):
+            file.write(f"Trial {i}: {error_rate * 100}%\n")
+        file.write(f"\nOverall Mean Classifier Error Rate (over {n_trials} trials with {n_folds}-fold CV): {mean_error_rate * 100}%\n")
 
     return mean_error_rate
 
@@ -266,4 +272,3 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
             break
 
     
-
