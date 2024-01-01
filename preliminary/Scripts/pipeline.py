@@ -1,9 +1,11 @@
 import tkinter as tk
 import threading
+import numpy as np
+import os
 from queue import Queue
 from data_preprocessing import run_data_preprocessing
 from artifact_rejection import run_artifact_rejection
-from classifier import run_classifier
+from classifier import run_classifier, calculate_mean_error_rate_cv
 from feedback_generator import run_feedback_generator, realtime_graph
 
 def update_output(gui_queue, text_widget, image_label=None):
@@ -78,14 +80,14 @@ def setup_gui():
 
     realtime_graph(root, right_frame, queue_graph_update)
 
-    # Schedule the image label to update periodically with a new image
-    # def schedule_image_update():
-    #     update_image_label(label_image)
-    #     root.after(5000, schedule_image_update)  # Update the image every 5000 ms (5 seconds)
-
-    # schedule_image_update()
-
     root.mainloop()
 
 if __name__ == "__main__":
-    setup_gui()
+    try:
+        setup_gui()
+    except KeyboardInterrupt:
+        print("Interrupt received, evaluating model before shutting down.")
+        X_test = np.load(os.path.join("../data/", "X_test.npy"))
+        y_test = np.load(os.path.join("../data/", "y_test.npy"))
+        calculate_mean_error_rate_cv(X_test, y_test)
+        print("Evaluation saved in ../reports/. Shutting down.")
