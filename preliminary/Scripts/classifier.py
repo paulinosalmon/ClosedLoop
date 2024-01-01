@@ -4,11 +4,67 @@ import time
 import joblib
 import os
 
-from settings import classifier, config, config_score
+from settings import classifier, config, config_score, channelNames
 from datetime import datetime
-from sklearn.model_selection import cross_val_score, cross_val_predict
+from sklearn.model_selection import cross_val_score, cross_val_predict, StratifiedKFold, train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.base import clone
+
+# ================== Model Evaluation Functions ================== #
+
+def calculate_mean_error_rate_cv(test_X, test_y, n_trials=50, n_folds=10, model_path="../model/best_model.pkl", report_path="../reports/classifier_report.txt"):
+    """
+    Calculate the mean classifier error rate over N trials using cross-validation.
+
+    Parameters:
+    - test_X: Test features
+    - test_y: True labels for the test data
+    - n_trials: Number of trials to perform
+    - n_folds: Number of folds for cross-validation
+    - model_path: Path to the saved model
+    - report_path: Path to save the report
+    """
+    error_rates = []
+    kf = StratifiedKFold(n_splits=n_folds)
+
+    for _ in range(n_trials):
+        for train_index, test_index in kf.split(test_X, test_y):
+            X_train, X_test = test_X[train_index], test_X[test_index]
+            y_train, y_test = test_y[train_index], test_y[test_index]
+
+            # Load the saved model
+            model = joblib.load(model_path)
+
+            # Train and predict
+            model.fit(X_train, y_train)
+            predicted_y = model.predict(X_test)
+
+            # Calculate error rate and append to list
+            error_rate = 1 - accuracy_score(y_test, predicted_y)
+            error_rates.append(error_rate)
+
+    # Calculate the mean error rate
+    mean_error_rate = np.mean(error_rates)
+
+    # Write the error rate to a file
+    with open(report_path, "w") as file:
+        file.write(f"Mean Classifier Error Rate (over {n_trials} trials with {n_folds}-fold CV): {mean_error_rate * 100}%\n")
+
+    return mean_error_rate
+
+def save_data(X, y, directory="../data/", prefix=""):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        
+    x_filename = os.path.join(directory, "X_test.npy")
+    y_filename = os.path.join(directory, "y_test.npy")
+
+    np.save(x_filename, X)
+    np.save(y_filename, y)
+    print(f"Saved X to {x_filename}")
+    print(f"Saved y to {y_filename}")
+
+# =============== Current iteration evaluation ================== #
 
 def evaluate_model(classifier, X, y, cv=3):
     """
@@ -40,6 +96,8 @@ def evaluate_saved_model(test_X, test_y):
     # Calculate and return error rate
     error_rate = 1 - accuracy
     return error_rate
+
+# ================== Calculations after classifier output ==================== #
 
 def calculate_bias_offset(classifier, X, y, cv=3, limit=0.125):
     """
@@ -93,6 +151,7 @@ def asymmetric_sigmoid_transfer(output, inflection_point=0.6, lower_bound=0.17, 
     sigmoid_output = 1 / (1 + np.exp(-adjusted_output))
     return lower_bound + sigmoid_range * sigmoid_output
 
+# ==================== Main Function ========================== #
 
 def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
     global is_model_generated
@@ -110,6 +169,7 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
             X_processed = np.array(X_processed).T if isinstance(X_processed, list) else X_processed.T
             y_processed = np.array(y_processed).flatten() if isinstance(y_processed, list) else y_processed.flatten()
 
+
             # Check dimensions and ensure they match
             if X_processed.shape[0] != y_processed.shape[0]:
                 raise ValueError("Number of samples in X and y do not match")
@@ -119,10 +179,18 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
                 joblib.dump(classifier, model_path)
                 print(f"Model saved at {model_path}")
 
-            # Train the classifier
-            classifier.fit(X_processed, y_processed)
+            # Split the data into training and test sets
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_processed, y_processed, test_size=0.2, random_state=42
+            )
 
-            # ======================================================================== #
+            # Save test data for evaluation after pipeline termination
+            save_data(X_test, y_test)
+
+            # Train the classifier
+            classifier.fit(X_train, y_train)
+
+            # ============ Check if best model already exists ============= #
 
             if config["is_model_generated"] == False:
                 print(f"[{datetime.now()}] [Classifier] Creating and saving a new model to {model_path}")
@@ -130,7 +198,7 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
                 config["is_model_generated"] = True
         
             # Evaluate the model
-            current_score = evaluate_model(classifier, X_processed, y_processed)
+            current_score = evaluate_model(classifier, X_test, y_test)
             queue_gui.put(f"[{datetime.now()}] [Classifier] Current model score: {current_score}")
 
             # Save the model if it performs better
@@ -139,18 +207,18 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
                 joblib.dump(classifier, model_path)
                 queue_gui.put(f"[{datetime.now()}] [Classifier] New best model saved.")
 
-            # ======================================================================== #
+            # ============= Perform probability computations (LR) + bias offset on classifier output ====================== #
 
             queue_gui.put(f"[{datetime.now()}] [Classifier] Classifier trained.")
 
             # Estimate prediction probabilities
-            probabilities = classifier.predict_proba(X_processed)
+            probabilities = classifier.predict_proba(X_train)
             past_probabilities.append(probabilities)
 
             # Calculate bias offset
             if len(past_probabilities) == 1:
                 # For the first feedback run
-                bias_offset = calculate_bias_offset(classifier, X_processed, y_processed)
+                bias_offset = calculate_bias_offset(classifier, X_train, y_train)
             else:
                 # For subsequent feedback runs, use the bias of the four most recent feedback blocks
                 recent_probabilities = past_probabilities[-4:]
@@ -164,7 +232,7 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
 
             queue_gui.put(f"[{datetime.now()}] [Classifier] Bias offset calculated: {bias_offset}")
 
-            # ======================================================================== #
+            # ============ Perform WMA and apply transfer function to probabilities ================ #
 
             # If more than one set of probabilities, calculate WMA
             if len(past_probabilities) > 1:
@@ -177,16 +245,9 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
             # Apply bias offset to the classifier output
             classifier_output -= bias_offset
             visibility_scores = np.array([asymmetric_sigmoid_transfer(output) for output in classifier_output])
-            # ======================================================================== #
 
-            # Calculate mean classifier error decoding rate
+            # ============== Print and send visibility scores to queue for feedback generation ===================== #
 
-            error_rate = evaluate_saved_model(X_processed, y_processed)
-            queue_gui.put(f"[{datetime.now()}] [Classifier] Best model's current mean classifier error decoding rate: {error_rate*100}%")
-
-            # ======================================================================== #
-
-            # Calculate and log the average visibility score
             average_visibility_score = np.mean(visibility_scores)
             queue_gui.put(f"[{datetime.now()}] [Classifier] Average visibility score: {average_visibility_score:.3f}")
 
@@ -204,5 +265,5 @@ def run_classifier(queue_gui, queue_artifact_rejection, queue_classifier):
             queue_gui.put(f"[{datetime.now()}] [Classifier] Error encountered: {e}")
             break
 
-# Note: Adjust the `task_relevant_index` if the task-relevant category
-# is not represented by the second column (index 1) in the probabilities array.
+    
+
