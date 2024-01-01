@@ -8,8 +8,8 @@ from settings import classifier, config, config_score, channelNames
 from datetime import datetime
 from sklearn.model_selection import cross_val_score, cross_val_predict, StratifiedKFold, train_test_split
 from sklearn.metrics import accuracy_score
-from sklearn.utils import shuffle
 from sklearn.base import clone
+from sklearn.utils import shuffle
 
 # ================== Model Evaluation Functions ================== #
 
@@ -46,7 +46,7 @@ def calculate_mean_error_rate_cv(test_X, test_y, n_trials=50, n_folds=10, model_
 
         print(f"Trial {trial + 1} Error Rate: {mean_trial_error_rate * 100}%")
 
-    # Calculate the overall mean error rate
+    # Calculate the overall mean error rate 
     mean_error_rate = np.mean(mean_trial_error_rates)
 
     # Write the error rates to a file
